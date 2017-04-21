@@ -295,26 +295,6 @@ print_stack_trace()
 }
 
 
-int is_target;
-#define CHECK() if(is_target) g_message("%s in %s: %d", __FUNCTION__, __FILE__, __LINE__)
-
-static int is_method(MonoMethod *m, const char* want)
-{
-	char* name = NULL;
-	int is_target = 0;
-
-	if (m && m != MONO_FAKE_VTABLE_METHOD && m != MONO_FAKE_IMT_METHOD)
-	{
-		name = mono_method_full_name();
-		if (strncmp(name, want, strlen(want)) == 0)
-			is_target = 1;
-		g_free(name);
-	}
-
-	return is_target;
-}
-
-
 /**
  * mono_magic_trampoline:
  *
