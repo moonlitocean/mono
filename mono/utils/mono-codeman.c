@@ -231,7 +231,8 @@ mono_code_manager_foreach (MonoCodeManager *cman, MonoCodeManagerFunc func, void
 #define BIND_ROOM 4
 #endif
 #if defined(__arm__)
-#define BIND_ROOM 8
+// #define BIND_ROOM 8
+#define BIND_ROOM 4   // Fix "pdata.found == 1" problem, which is responsble for a crash that hit 10% percent of user daily in FF (Because of heavey use of generated code)
 #endif
 
 static CodeChunk*
