@@ -239,6 +239,83 @@ mono_convert_imt_slot_to_vtable_slot (gpointer* slot, mgreg_t *regs, guint8 *cod
 #endif
 
 /**
+ * debug_print_method:
+ * 
+ *   Prints the fullname of the method m
+  */
+static void
+debug_print_method(MonoMethod* m, guint8 *code, mgreg_t *regs)
+{
+	char *name = NULL;
+	if(m == MONO_FAKE_VTABLE_METHOD)
+	{
+		MonoJitInfo *ji = mono_jit_info_table_find (mono_domain_get (), (char*)code);
+		g_message("mono_magic_trampoline MONO_FAKE_VTABLE_METHOD %s\n", ji && ji->method ? name = mono_method_full_name(ji->method, TRUE) : "[!!jit not found]");
+	}
+	else if(m == MONO_FAKE_IMT_METHOD)
+	{
+		MonoMethod *m_imt = mono_arch_find_imt_method (regs, code);
+		g_message("mono_magic_trampoline MONO_FAKE_IMT_METHOD %s\n", m_imt ? name = mono_method_full_name(m_imt, TRUE) : "[!!imt not found]");
+	}
+	else if(m)
+	{
+		g_message("mono_magic_trampoline %s\n", name = mono_method_full_name(m, TRUE));
+	}
+	g_free(name);
+}
+
+static void
+print_stack_trace()
+{
+	MonoObject *o;
+	MonoMethod *method;
+	MonoClass *klass = mono_class_from_name (mono_get_corlib (), "System.Diagnostics", "StackTrace");
+	g_assert (klass);
+
+	o = mono_object_new (mono_domain_get (), klass);
+	g_assert (o);
+	mono_runtime_object_init(o);
+
+	method = mono_class_get_method_from_name (klass, "ToString", 0);
+	g_assert (method);
+
+	MonoString* trace = (MonoString*) mono_runtime_invoke (method, o, NULL, NULL);
+	{
+		MonoError error;
+		char *s = mono_string_to_utf8_checked (trace, &error);
+
+		if(!mono_error_ok (&error))
+		{
+			g_error("print_stack_trace mono_string_to_utf8_checked(trace) failed");
+			return;
+		}
+		g_message(s);
+		g_free(s);
+	}
+}
+
+
+int is_target;
+#define CHECK() if(is_target) g_message("%s in %s: %d", __FUNCTION__, __FILE__, __LINE__)
+
+static int is_method(MonoMethod *m, const char* want)
+{
+	char* name = NULL;
+	int is_target = 0;
+
+	if (m && m != MONO_FAKE_VTABLE_METHOD && m != MONO_FAKE_IMT_METHOD)
+	{
+		name = mono_method_full_name();
+		if (strncmp(name, want, strlen(want)) == 0)
+			is_target = 1;
+		g_free(name);
+	}
+
+	return is_target;
+}
+
+
+/**
  * mono_magic_trampoline:
  *
  *   This trampoline handles calls from JITted code.
@@ -564,7 +641,16 @@ mono_magic_trampoline (mgreg_t *regs, guint8 *code, gpointer arg, guint8* tramp)
 					mono_jit_info_table_find (mono_domain_get (), mono_get_addr_from_ftnptr (compiled_method));
 
 				if (mono_method_same_domain (ji, target_ji))
-					mono_arch_patch_callsite (ji->code_start, code, addr);
+				{
+					if (mono_arch_patch_callsite (ji->code_start, code, addr) != 0)
+					{
+						debug_print_method(m, code, regs);
+						debug_print_method(arg, code, regs);
+						print_stack_trace();
+
+						g_error("pdata.found == 1");
+					}
+				}
 			}
 		}
 	}

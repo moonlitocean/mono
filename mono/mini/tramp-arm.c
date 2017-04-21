@@ -20,7 +20,7 @@
 
 static guint8* nullified_class_init_trampoline;
 
-void
+int
 mono_arch_patch_callsite (guint8 *method_start, guint8 *code_ptr, guint8 *addr)
 {
 	guint32 *code = (guint32*)code_ptr;
@@ -33,19 +33,22 @@ mono_arch_patch_callsite (guint8 *method_start, guint8 *code_ptr, guint8 *addr)
 	 */
 	if ((((*code) >> 25)  & 7) == 5) {
 		/*g_print ("direct patching\n");*/
-		arm_patch ((guint8*)code, addr);
+		if (arm_patch ((guint8*)code, addr) != 0)
+			return -1;
 		mono_arch_flush_icache ((guint8*)code, 4);
-		return;
+		return 0;
 	}
 
 	if ((((*code) >> 20) & 0xFF) == 0x12) {
 		/*g_print ("patching bx\n");*/
-		arm_patch ((guint8*)code, addr);
+		if (arm_patch ((guint8*)code, addr) != 0)
+			return -1;
 		mono_arch_flush_icache ((guint8*)(code - 2), 4);
-		return;
+		return 0;
 	}
 
 	g_assert_not_reached ();
+	return 0;
 }
 
 void

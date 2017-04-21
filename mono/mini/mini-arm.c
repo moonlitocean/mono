@@ -2576,7 +2576,7 @@ search_thunk_slot (void *data, int csize, int bsize, void *user_data) {
 	return 0;
 }
 
-static void
+static int
 handle_thunk (MonoDomain *domain, int absolute, guchar *code, const guchar *target, MonoCodeManager *dyn_code_mp)
 {
 	PatchData pdata;
@@ -2630,11 +2630,11 @@ handle_thunk (MonoDomain *domain, int absolute, guchar *code, const guchar *targ
 		mono_domain_unlock (domain);
 	}
 	if (pdata.found != 1)
-		g_print ("thunk failed for %p from %p\n", target, code);
-	g_assert (pdata.found == 1);
+		g_message ("thunk failed for %p from %p\n", target, code);
+	return pdata.found == 1 ? 0 : -1;
 }
 
-static void
+static int
 arm_patch_general (MonoDomain *domain, guchar *code, const guchar *target, MonoCodeManager *dyn_code_mp)
 {
 	guint32 *code32 = (void*)code;
@@ -2668,7 +2668,7 @@ arm_patch_general (MonoDomain *domain, guchar *code, const guchar *target, MonoC
 				ins = (ins & 0xff000000) | diff;
 				ins &= tmask;
 				*code32 = ins | tbits;
-				return;
+				return 0;
 			}
 		} else {
 			/* diff between 0 and -33554432 */
@@ -2677,12 +2677,11 @@ arm_patch_general (MonoDomain *domain, guchar *code, const guchar *target, MonoC
 				ins = (ins & 0xff000000) | (diff & ~0xff000000);
 				ins &= tmask;
 				*code32 = ins | tbits;
-				return;
+				return 0;
 			}
 		}
 		
-		handle_thunk (domain, TRUE, code, target, dyn_code_mp);
-		return;
+		return handle_thunk (domain, TRUE, code, target, dyn_code_mp);
 	}
 
 	/*
@@ -2729,7 +2728,7 @@ arm_patch_general (MonoDomain *domain, guchar *code, const guchar *target, MonoC
 			g_assert (code32 [-3] == ccode [1]);
 			g_assert (code32 [-1] == ccode [2]);
 			code32 [-2] = (guint32)target;
-			return;
+			return 0;
 		}
 		/*patching from JIT*/
 		if (ins == ccode [0]) {
@@ -2737,7 +2736,7 @@ arm_patch_general (MonoDomain *domain, guchar *code, const guchar *target, MonoC
 			g_assert (code32 [3] == ccode [2]);
 			g_assert (code32 [4] == ccode [3]);
 			code32 [2] = (guint32)target;
-			return;
+			return 0;
 		}
 		g_assert_not_reached ();
 	} else if ((ins & 0x0ffffff0) == 0x12fff30) {
@@ -2769,22 +2768,24 @@ arm_patch_general (MonoDomain *domain, guchar *code, const guchar *target, MonoC
 		if (ins == ccode [2]) {
 			g_assert_not_reached (); // should be -2 ...
 			code32 [-1] = (guint32)target;
-			return;
+			return 0;
 		}
 		if (ins == ccode [0]) {
 			/* handles both thunk jump code and the far call sequence */
 			code32 [2] = (guint32)target;
-			return;
+			return 0;
 		}
 		g_assert_not_reached ();
 	}
+
+	return 0;
 //	g_print ("patched with 0x%08x\n", ins);
 }
 
-void
+int
 arm_patch (guchar *code, const guchar *target)
 {
-	arm_patch_general (NULL, code, target, NULL);
+	return arm_patch_general (NULL, code, target, NULL);
 }
 
 /* 

@@ -78,7 +78,7 @@ mono_arch_get_static_rgctx_trampoline (MonoMethod *m, MonoMethodRuntimeGenericCo
 	return start;
 }
 
-void
+int
 mono_arch_patch_callsite (guint8 *method_start, guint8 *orig_code, guint8 *addr)
 {
 	guint8 *code;
@@ -116,6 +116,8 @@ mono_arch_patch_callsite (guint8 *method_start, guint8 *orig_code, guint8 *addr)
 				code [4], code [5], code [6]);
 		g_assert_not_reached ();
 	}
+	
+	return 0;
 }
 
 void
