@@ -2629,9 +2629,9 @@ handle_thunk (MonoDomain *domain, int absolute, guchar *code, const guchar *targ
 		}
 		mono_domain_unlock (domain);
 	}
-	// if (pdata.found != 1)
-	// 	g_print ("thunk failed for %p from %p\n", target, code);
-	// g_assert (pdata.found == 1);
+	if (pdata.found != 1)
+		g_print ("thunk failed for %p from %p\n", target, code);
+	g_assert (pdata.found == 1);
 }
 
 static void
