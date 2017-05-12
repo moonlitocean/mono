@@ -264,6 +264,8 @@ new_codechunk (int dynamic, int size)
 	}
 #ifdef BIND_ROOM
 	bsize = chunk_size / BIND_ROOM;
+	bsize = 0;	// 添加这一行
+	
 	if (bsize < MIN_BSIZE)
 		bsize = MIN_BSIZE;
 	bsize += MIN_ALIGN -1;
