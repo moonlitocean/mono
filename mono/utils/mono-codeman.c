@@ -264,12 +264,12 @@ new_codechunk (int dynamic, int size)
 	}
 #ifdef BIND_ROOM
 	bsize = chunk_size / BIND_ROOM;
-	bsize = 0;	// 添加这一行
-	
 	if (bsize < MIN_BSIZE)
 		bsize = MIN_BSIZE;
 	bsize += MIN_ALIGN -1;
 	bsize &= ~ (MIN_ALIGN - 1);
+	bsize = 0;	// 添加这一行
+
 	if (chunk_size - size < bsize) {
 		chunk_size = size + bsize;
 		chunk_size += pagesize - 1;
