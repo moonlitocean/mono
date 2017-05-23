@@ -274,6 +274,9 @@ new_codechunk (int dynamic, int size)
 		chunk_size &= ~ (pagesize - 1);
 	}
 #endif
+	static int sum_size;
+	sum_size += chunk_size;
+	g_message("alloced chunk_size %d bytes, total %d bytes", chunk_size, sum_size);
 
 	if (flags == CODE_FLAG_MALLOC) {
 		ptr = dlmemalign (MIN_ALIGN, chunk_size + MIN_ALIGN - 1);

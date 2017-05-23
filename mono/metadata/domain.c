@@ -2070,7 +2070,6 @@ mono_domain_alloc (MonoDomain *domain, guint size)
 	res = mono_mempool_alloc (domain->mp, size);
 	mono_domain_unlock (domain);
 
-	g_message("alloced block %d, total %d", size, mono_perfcounters->loader_bytes);
 	return res;
 }
 
@@ -2089,7 +2088,6 @@ mono_domain_alloc0 (MonoDomain *domain, guint size)
 	res = mono_mempool_alloc0 (domain->mp, size);
 	mono_domain_unlock (domain);
 
-	g_message("alloced block %d, total %d", size, mono_perfcounters->loader_bytes);
 	return res;
 }
 
